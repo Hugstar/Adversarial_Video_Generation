@@ -3,6 +3,8 @@ import getopt
 import sys
 import os
 
+from tensorflow.python.training.summary_io import SummaryWriter
+
 from utils import get_train_batch, get_test_batch
 import constants as c
 from g_model import GeneratorModel
@@ -27,7 +29,7 @@ class AVGRunner:
         self.num_test_rec = num_test_rec
 
         self.sess = tf.Session()
-        self.summary_writer = tf.train.SummaryWriter(c.SUMMARY_SAVE_DIR, graph=self.sess.graph)
+        self.summary_writer = SummaryWriter(c.SUMMARY_SAVE_DIR, graph=self.sess.graph)
 
         if c.ADVERSARIAL:
             print('Init discriminator...')

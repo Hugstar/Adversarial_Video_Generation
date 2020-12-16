@@ -1,8 +1,10 @@
 import tensorflow as tf
 import numpy as np
-from scipy.ndimage import imread
+
 from glob import glob
 import os
+
+from PIL import Image
 
 import constants as c
 from tfutils import log10
@@ -83,7 +85,7 @@ def get_full_clips(data_dir, num_clips, num_rec_out=1):
 
         # read in frames
         for frame_num, frame_path in enumerate(clip_frame_paths):
-            frame = imread(frame_path, mode='RGB')
+            frame = np.array(Image.open(frame_path))
             norm_frame = normalize_frames(frame)
 
             clips[clip_num, :, :, frame_num * 3:(frame_num + 1) * 3] = norm_frame
@@ -193,8 +195,8 @@ def sharp_diff_error(gen_frames, gt_frames):
     # TODO: Could this be simplified with one filter [[-1, 2], [0, -1]]?
     pos = tf.constant(np.identity(3), dtype=tf.float32)
     neg = -1 * pos
-    filter_x = tf.expand_dims(tf.pack([neg, pos]), 0)  # [-1, 1]
-    filter_y = tf.pack([tf.expand_dims(pos, 0), tf.expand_dims(neg, 0)])  # [[1],[-1]]
+    filter_x = tf.expand_dims(tf.stack([neg, pos]), 0)  # [-1, 1]
+    filter_y = tf.stack([tf.expand_dims(pos, 0), tf.expand_dims(neg, 0)])  # [[1],[-1]]
     strides = [1, 1, 1, 1]  # stride of (1, 1)
     padding = 'SAME'
 

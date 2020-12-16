@@ -1,14 +1,17 @@
-import tensorflow as tf
-import numpy as np
-from scipy.misc import imsave
-from skimage.transform import resize
-from copy import deepcopy
 import os
+from copy import deepcopy
+
+import numpy as np
+import tensorflow as tf
+from PIL import Image
+from skimage.transform import resize
+from tensorflow.python.ops.logging_ops import scalar_summary, merge_summary
 
 import constants as c
 from loss_functions import combined_loss
-from utils import psnr_error, sharp_diff_error
 from tfutils import w, b
+from utils import psnr_error, sharp_diff_error
+
 
 # noinspection PyShadowingNames
 class GeneratorModel:
@@ -113,8 +116,8 @@ class GeneratorModel:
                             # scale to the input
                             if scale_num > 0:
                                 last_gen_frames = tf.image.resize_images(
-                                    last_gen_frames,[scale_height, scale_width])
-                                inputs = tf.concat(3, [inputs, last_gen_frames])
+                                    last_gen_frames, [scale_height, scale_width])
+                                inputs = tf.concat([inputs, last_gen_frames], 3)
 
                             # generated frame predictions
                             preds = inputs
@@ -196,7 +199,7 @@ class GeneratorModel:
                                                         name='train_op')
 
                 # train loss summary
-                loss_summary = tf.scalar_summary('train_loss_G', self.global_loss)
+                loss_summary = scalar_summary('train_loss_G', self.global_loss)
                 self.summaries_train.append(loss_summary)
 
             ##
@@ -215,22 +218,22 @@ class GeneratorModel:
                 self.sharpdiff_error_test = sharp_diff_error(self.scale_preds_test[-1],
                                                              self.gt_frames_test)
                 # train error summaries
-                summary_psnr_train = tf.scalar_summary('train_PSNR',
+                summary_psnr_train = scalar_summary('train_PSNR',
                                                        self.psnr_error_train)
-                summary_sharpdiff_train = tf.scalar_summary('train_SharpDiff',
+                summary_sharpdiff_train = scalar_summary('train_SharpDiff',
                                                             self.sharpdiff_error_train)
                 self.summaries_train += [summary_psnr_train, summary_sharpdiff_train]
 
                 # test error
-                summary_psnr_test = tf.scalar_summary('test_PSNR',
+                summary_psnr_test = scalar_summary('test_PSNR',
                                                       self.psnr_error_test)
-                summary_sharpdiff_test = tf.scalar_summary('test_SharpDiff',
+                summary_sharpdiff_test = scalar_summary('test_SharpDiff',
                                                            self.sharpdiff_error_test)
                 self.summaries_test += [summary_psnr_test, summary_sharpdiff_test]
 
             # add summaries to visualize in TensorBoard
-            self.summaries_train = tf.merge_summary(self.summaries_train)
-            self.summaries_test = tf.merge_summary(self.summaries_test)
+            self.summaries_train = merge_summary(self.summaries_train)
+            self.summaries_test = merge_summary(self.summaries_test)
 
     def train_step(self, batch, discriminator=None):
         """
@@ -324,7 +327,8 @@ class GeneratorModel:
                 # save input images
                 for frame_num in range(c.HIST_LEN):
                     img = input_frames[pred_num, :, :, (frame_num * 3):((frame_num + 1) * 3)]
-                    imsave(os.path.join(pred_dir, 'input_' + str(frame_num) + '.png'), img)
+                    Image.fromarray(img.astype('uint8')).save(
+                        os.path.join(pred_dir, 'input_' + str(frame_num) + '.png'))
 
                 # save preds and gts at each scale
                 # noinspection PyUnboundLocalVariable
@@ -334,8 +338,8 @@ class GeneratorModel:
                     path = os.path.join(pred_dir, 'scale' + str(scale_num))
                     gt_img = scale_gts[scale_num][pred_num]
 
-                    imsave(path + '_gen.png', gen_img)
-                    imsave(path + '_gt.png', gt_img)
+                    Image.fromarray(gen_img.astype('uint8')).save(path + '_gen.png')
+                    Image.fromarray(gt_img.astype('uint8')).save(path + '_gt.png')
 
             print('Saved images!')
             print(('-' * 30))
@@ -416,13 +420,17 @@ class GeneratorModel:
                 # save input images
                 for frame_num in range(c.HIST_LEN):
                     img = input_frames[pred_num, :, :, (frame_num * 3):((frame_num + 1) * 3)]
-                    imsave(os.path.join(pred_dir, 'input_' + str(frame_num) + '.png'), img)
+                    Image.fromarray(img.astype('uint8')).save(
+                        os.path.join(pred_dir, 'input_' + str(frame_num) + '.png'))
 
                 # save recursive outputs
                 for rec_num in range(num_rec_out):
                     gen_img = rec_preds[rec_num][pred_num]
                     gt_img = gt_frames[pred_num, :, :, 3 * rec_num:3 * (rec_num + 1)]
-                    imsave(os.path.join(pred_dir, 'gen_' + str(rec_num) + '.png'), gen_img)
-                    imsave(os.path.join(pred_dir, 'gt_' + str(rec_num) + '.png'), gt_img)
+
+                    Image.fromarray(gen_img.astype('uint8')).save(
+                        (os.path.join(pred_dir, 'gen_' + str(rec_num) + '.png')))
+                    Image.fromarray(gt_img.astype('uint8')).save(
+                        (os.path.join(pred_dir, 'gt_' + str(rec_num) + '.png')))
 
         print(('-' * 30))

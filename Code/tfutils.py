@@ -7,6 +7,7 @@ def w(shape, stddev=0.01):
     @return A weight layer with the given shape and standard deviation. Initialized with a
             truncated normal distribution.
     """
+    shape = [int(x) for x in shape]
     return tf.Variable(tf.truncated_normal(shape, stddev=stddev))
 
 
@@ -14,6 +15,7 @@ def b(shape, const=0.1):
     """
     @return A bias layer with the given shape.
     """
+    shape = [int(x) for x in shape]
     return tf.Variable(tf.constant(const, shape=shape))
 
 
@@ -92,12 +94,12 @@ def batch_pad_to_bounding_box(images, offset_height, offset_width, target_height
     rpad = np.zeros([batch_size, target_height, num_rpad, channels])
 
     padded = images
-    if num_tpad > 0 and num_bpad > 0: padded = tf.concat(1, [tpad, padded, bpad])
-    elif num_tpad > 0: padded = tf.concat(1, [tpad, padded])
-    elif num_bpad > 0: padded = tf.concat(1, [padded, bpad])
-    if num_lpad > 0 and num_rpad > 0: padded = tf.concat(2, [lpad, padded, rpad])
-    elif num_lpad > 0: padded = tf.concat(2, [lpad, padded])
-    elif num_rpad > 0: padded = tf.concat(2, [padded, rpad])
+    if num_tpad > 0 and num_bpad > 0: padded = tf.concat([tpad, padded, bpad], 1)
+    elif num_tpad > 0: padded = tf.concat([tpad, padded], 1)
+    elif num_bpad > 0: padded = tf.concat([padded, bpad], 1)
+    if num_lpad > 0 and num_rpad > 0: padded = tf.concat([lpad, padded, rpad], 2)
+    elif num_lpad > 0: padded = tf.concat([lpad, padded], 2)
+    elif num_rpad > 0: padded = tf.concat([padded, rpad], 2)
 
     return padded
 

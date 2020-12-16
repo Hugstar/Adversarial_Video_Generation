@@ -1,9 +1,12 @@
-import numpy as np
 import os
-from glob import glob
 import shutil
 from datetime import datetime
-from scipy.ndimage import imread
+from glob import glob
+
+import numpy as np
+from PIL import Image
+from pathlib import Path
+
 
 ##
 # Data
@@ -15,6 +18,7 @@ def get_date_str():
     """
     return str(datetime.now()).replace(' ', '_').replace(':', '.')[:-10]
 
+
 def get_dir(directory):
     """
     Creates the given directory if it does not exist.
@@ -25,6 +29,7 @@ def get_dir(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
     return directory
+
 
 def clear_dir(directory):
     """
@@ -42,19 +47,22 @@ def clear_dir(directory):
         except Exception as e:
             print(e)
 
+
 def get_test_frame_dims():
-    img_path = glob(os.path.join(TEST_DIR, '*/*'))[0]
-    img = imread(img_path, mode='RGB')
+    img_path = list(Path(TRAIN_DIR).rglob('*.png'))[0]
+    img = np.array(Image.open(img_path))
     shape = np.shape(img)
 
     return shape[0], shape[1]
+
 
 def get_train_frame_dims():
-    img_path = glob(os.path.join(TRAIN_DIR, '*/*'))[0]
-    img = imread(img_path, mode='RGB')
+    img_path = list(Path(TRAIN_DIR).rglob('*.png'))[0]
+    img = np.array(Image.open(img_path))
     shape = np.shape(img)
 
     return shape[0], shape[1]
+
 
 def set_test_dir(directory):
     """
@@ -67,6 +75,7 @@ def set_test_dir(directory):
     TEST_DIR = directory
     FULL_HEIGHT, FULL_WIDTH = get_test_frame_dims()
 
+
 # root directory for all data
 DATA_DIR = get_dir('../Data/')
 # directory of unprocessed training frames
@@ -75,7 +84,7 @@ TRAIN_DIR = os.path.join(DATA_DIR, 'Ms_Pacman/Train/')
 TEST_DIR = os.path.join(DATA_DIR, 'Ms_Pacman/Test/')
 # Directory of processed training clips.
 # hidden so finder doesn't freeze w/ so many files. DON'T USE `ls` COMMAND ON THIS DIR!
-TRAIN_DIR_CLIPS = get_dir(os.path.join(DATA_DIR, '.Clips/'))
+TRAIN_DIR_CLIPS = get_dir(os.path.join(DATA_DIR, 'Ms_Pacman/.Clips/'))
 
 # For processing clips. l2 diff between frames must be greater than this
 MOVEMENT_THRESHOLD = 100
@@ -87,6 +96,7 @@ FULL_HEIGHT = 210
 FULL_WIDTH = 160
 # the height and width of the patches to train on
 TRAIN_HEIGHT = TRAIN_WIDTH = 32
+
 
 ##
 # Output
@@ -104,6 +114,7 @@ def set_save_name(name):
     MODEL_SAVE_DIR = get_dir(os.path.join(SAVE_DIR, 'Models/', SAVE_NAME))
     SUMMARY_SAVE_DIR = get_dir(os.path.join(SAVE_DIR, 'Summaries/', SAVE_NAME))
     IMG_SAVE_DIR = get_dir(os.path.join(SAVE_DIR, 'Images/', SAVE_NAME))
+
 
 def clear_save_name():
     """
@@ -126,11 +137,10 @@ SUMMARY_SAVE_DIR = get_dir(os.path.join(SAVE_DIR, 'Summaries/', SAVE_NAME))
 # directory for saved images
 IMG_SAVE_DIR = get_dir(os.path.join(SAVE_DIR, 'Images/', SAVE_NAME))
 
-
-STATS_FREQ      = 10     # how often to print loss/train error stats, in # steps
-SUMMARY_FREQ    = 100    # how often to save the summaries, in # steps
-IMG_SAVE_FREQ   = 1000   # how often to save generated images, in # steps
-TEST_FREQ       = 5000   # how often to test the model on test data, in # steps
+STATS_FREQ = 10  # how often to print loss/train error stats, in # steps
+SUMMARY_FREQ = 100  # how often to save the summaries, in # steps
+IMG_SAVE_FREQ = 1000  # how often to save generated images, in # steps
+TEST_FREQ = 5000  # how often to test the model on test data, in # steps
 MODEL_SAVE_FREQ = 10000  # how often to save the model, in # steps
 
 ##
@@ -178,7 +188,6 @@ SCALE_KERNEL_SIZES_G = [[3, 3, 3, 3],
                         [5, 3, 3, 5],
                         [5, 3, 3, 3, 3, 5],
                         [7, 5, 5, 5, 5, 7]]
-
 
 ##
 # Discriminator model
